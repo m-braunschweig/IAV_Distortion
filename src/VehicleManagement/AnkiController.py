@@ -41,7 +41,7 @@ class AnkiController(VehicleController):
 
     def connect_to_vehicle(self, ble_client: BleakClient, start_notification: bool = True) -> bool:
         if ble_client is None or not isinstance(ble_client, BleakClient):
-            return False
+            raise ConnectionError('Invalid client. Expected a BleakClient instance.')
 
         try:
             connected_car = ble_client
@@ -51,9 +51,9 @@ class AnkiController(VehicleController):
                 self._setup_car(start_notification)
                 return True
             else:
-                return False
-        except IOError:
-            return False
+                raise ConnectionError('Failed to connect to the vehicle.')
+        except IOError as e:
+            raise ConnectionError(f'IOError occurred while connecting: {str(e)}')
 
     def change_speed_to(self, velocity: int, acceleration: int = 1000, respect_speed_limit: bool = True) -> bool:
         limit_int = int(respect_speed_limit)
