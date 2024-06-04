@@ -106,6 +106,9 @@ class DriverUI:
         return self.driverUI_blueprint
 
     def get_vehicle_by_player(self, player: str):
+        """
+        Returns the vehicle associated with the given player.
+        """
         temp_vehicle = [vehicle for vehicle in self.vehicles if vehicle.player == player]
         if len(temp_vehicle) == 1:
             return temp_vehicle[0]

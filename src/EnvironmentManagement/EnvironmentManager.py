@@ -41,6 +41,12 @@ class EnvironmentManager:
 
 
     def connect_all_anki_cars(self) -> list[Vehicle]:
+        """
+        Connects all unpaired Anki cars.
+
+        Returns:
+            A list of `Vehicle` objects representing the connected Anki cars.
+        """
         found_anki_cars = self.find_unpaired_anki_cars()
         for vehicle_uuid in found_anki_cars:
             self.logger.info(f'Connecting to vehicle {vehicle_uuid}')
@@ -48,6 +54,12 @@ class EnvironmentManager:
         return self.get_vehicle_list()
 
     def find_unpaired_anki_cars(self) -> list[str]:
+        """
+        Finds unpaired Anki cars by scanning for devices and removing the ones that are already active.
+
+        Returns:
+            A list of strings representing the UUIDs of the unpaired Anki cars.
+        """
         self.logger.info("Searching for unpaired Anki cars")
         found_devices = self._fleet_ctrl.scan_for_anki_cars()
         # remove already active uuids:
@@ -89,6 +101,15 @@ class EnvironmentManager:
         return
 
     def update_queues_and_get_vehicle(self, player_id: str) -> Vehicle | None:
+        """
+        Updates the queues and attempts to get a vehicle for the given player.
+
+        Parameters:
+            player_id (str): The ID of the player.
+
+        Returns:
+            Vehicle | None: The vehicle associated with the player, if found. Otherwise, None.
+        """
         self._add_player_to_queue_if_appropiate(player_id)
         self._assign_players_to_vehicles()
         self._update_staff_ui()
@@ -115,7 +136,14 @@ class EnvironmentManager:
 
     def _assign_players_to_vehicles(self) -> None:
         """
-        Assigns as many waiting players to vehicles as possible
+        Assigns players to vehicles.
+
+        Iterates over the list of active Anki cars and checks if each car is free.
+        If a car is free, it checks if the player queue is empty. If the player queue is empty,
+        it updates the staff UI and returns. Otherwise, it removes the player at the beginning of the
+        player queue and emits a 'player_active' event using the SocketIO instance. It then sets the player
+        on the car and continues to the next car. Finally, it updates the staff UI.
+
         """
         for v in self._active_anki_cars:
             if v.is_free():
@@ -130,7 +158,7 @@ class EnvironmentManager:
 
     def add_player(self, player_id: str) -> None:
         """
-        Add a player to the waiting queue.
+        Adds a player to the player queue if they are not already in the queue.
         """
         if player_id in self._player_queue_list:
             print(f'Player {player_id} is already in the queue!')
@@ -143,7 +171,7 @@ class EnvironmentManager:
 
     def remove_player_from_waitlist(self, player_id: str) -> None:
         """
-        Remove a player from the waiting queue
+        Removes a player from the waitlist and emits a 'player_removed' event.
         """
         if player_id in self._player_queue_list:
             self._player_queue_list.remove(player_id)
@@ -154,7 +182,7 @@ class EnvironmentManager:
 
     def remove_player_from_vehicle(self, player: str) -> None:
         """
-        removes a player from the vehicle they are controlling
+        Removes a player from the waitlist and emits a 'player_removed' event.
         """
         self.logger.info(f"Removing player with UUID {player} from vehicle")
         for v in self._active_anki_cars:
@@ -166,6 +194,9 @@ class EnvironmentManager:
         return
 
     def add_vehicle(self, uuid: str) -> None:
+        """
+        Adds a vehicle to the list of active Anki cars.
+        """
         self.logger.debug(f"Adding vehicle with UUID {uuid}")
 
         anki_car_controller = AnkiController()
@@ -187,8 +218,10 @@ class EnvironmentManager:
 
     def get_controlled_cars_list(self) -> List[str]:
         """
-        Returns a list of all vehicle names from vehicles that are
-        controlled by a player
+        Returns a list of vehicle IDs for all active Anki cars that are currently controlled by a player.
+
+        :return: A list of strings representing the vehicle IDs of the active Anki cars.
+        :rtype: List[str]
         """
         l = []
         for v in self._active_anki_cars:
@@ -198,7 +231,10 @@ class EnvironmentManager:
 
     def get_free_car_list(self) -> List[str]:
         """
-        Returns a list of all cars that have no player controlling them
+        Returns a list of vehicle IDs for all active Anki cars that are currently free.
+
+        :return: A list of strings representing the vehicle IDs of the active Anki cars.
+        :rtype: List[str]
         """
         l = []
         for v in self._active_anki_cars:
@@ -208,7 +244,10 @@ class EnvironmentManager:
 
     def get_waiting_player_list(self) -> List[str]:
         """
-        Gets a list of all player that are waiting for a vehicle
+        Returns a list of player IDs for all players in the player queue.
+
+        :return: A list of strings representing the player IDs of the players in the player queue.
+        :rtype: List[str]
         """
         tmp = []
         for p in self._player_queue_list:
@@ -217,8 +256,8 @@ class EnvironmentManager:
 
     def get_car_from_player(self, player: str) -> Vehicle | None:
         """
-        Get the car that's controlled by a player or None, if the
-        player doesn't control any car
+        Returns the `Vehicle` object associated with the given `player` ID,
+        or `None` if no vehicle is found.
         """
         for v in self._active_anki_cars:
             if v.get_player() == player:
@@ -226,6 +265,11 @@ class EnvironmentManager:
         return None
 
     def get_mapped_cars(self) -> List[dict]:
+        """
+        Returns a list of dictionaries containing the player and car information
+        for all active Anki cars that are currently controlled by a player.
+
+        """
         tmp = []
         for v in self._active_anki_cars:
             if v.get_player() is not None:
